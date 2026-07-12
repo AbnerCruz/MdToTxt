@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Conversor de Pasta MD → TXT</title>
+<title>Conversor de Pasta MD → TXT/PDF</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f1115">
 <link rel="icon" href="icon-192.png">
@@ -19,8 +19,10 @@
     --border:#2a2e38;
     --accent:#7c9eff;
     --accent-dark:#5b7cff;
+    --folder:#e8b463;
     --text:#e7e9ee;
     --muted:#9aa1af;
+    --dim:#5c6270;
     --ok:#4ade80;
   }
   *{box-sizing:border-box;}
@@ -31,13 +33,13 @@
     color:var(--text);
     min-height:100vh;
     display:flex;
-    align-items:center;
+    align-items:flex-start;
     justify-content:center;
     padding:24px;
   }
   .card{
     width:100%;
-    max-width:640px;
+    max-width:680px;
     background:var(--panel);
     border:1px solid var(--border);
     border-radius:16px;
@@ -60,6 +62,7 @@
     text-align:center;
     cursor:pointer;
     transition:border-color .15s, background .15s;
+    display:block;
   }
   .drop:hover, .drop.dragover{
     border-color:var(--accent);
@@ -87,129 +90,7 @@
   }
   .status.error{color:#f87171;}
   .status.ok{color:var(--ok);}
-  .filelist{
-    margin-top:16px;
-    max-height:260px;
-    overflow-y:auto;
-    border:1px solid var(--border);
-    border-radius:10px;
-    display:none;
-  }
-  .filelist.show{display:block;}
-  .filerow{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:8px 14px;
-    font-size:0.82rem;
-    color:var(--muted);
-    border-bottom:1px solid var(--border);
-  }
-  .filerow:last-child{border-bottom:none;}
-  .filerow input[type=checkbox]{
-    flex-shrink:0;
-    accent-color:var(--accent);
-    width:15px;
-    height:15px;
-    cursor:pointer;
-  }
-  .filerow label{
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    cursor:pointer;
-  }
-  .filerow.excluded label{
-    text-decoration:line-through;
-    opacity:0.5;
-  }
-  .listActions{
-    display:flex;
-    gap:8px;
-    margin-top:10px;
-    flex-wrap:wrap;
-  }
-  .listActions button{
-    padding:6px 12px;
-    font-size:0.8rem;
-    background:transparent;
-    color:var(--muted);
-    border:1px solid var(--border);
-  }
-  .listActions button:hover{color:var(--text); border-color:var(--muted);}
-  .excludeBox{
-    margin-top:16px;
-    display:none;
-  }
-  .excludeBox.show{display:block;}
-  .excludeBox label.fieldLabel{
-    display:block;
-    font-size:0.85rem;
-    color:var(--muted);
-    margin-bottom:6px;
-  }
-  .excludeRow{
-    display:flex;
-    gap:8px;
-  }
-  .excludeRow input[type=text]{
-    flex:1;
-    font:inherit;
-    background:#1c2030;
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:10px 12px;
-    color:var(--text);
-    font-size:0.85rem;
-  }
-  .excludeRow input[type=text]:focus{
-    outline:none;
-    border-color:var(--accent);
-  }
-  .excludeRow button{
-    background:transparent;
-    color:var(--muted);
-    border:1px solid var(--border);
-    white-space:nowrap;
-  }
-  .excludeRow button:hover{color:var(--text); border-color:var(--muted);}
-  .excludeHint{
-    font-size:0.78rem;
-    color:var(--muted);
-    margin-top:6px;
-    line-height:1.4;
-  }
-  .actions{
-    margin-top:24px;
-    display:flex;
-    gap:12px;
-    flex-wrap:wrap;
-  }
-  button{
-    font:inherit;
-    border:none;
-    border-radius:10px;
-    padding:12px 20px;
-    font-size:0.95rem;
-    cursor:pointer;
-    transition:background .15s, opacity .15s;
-  }
-  #downloadBtn{
-    background:var(--accent);
-    color:#0f1115;
-    font-weight:600;
-  }
-  #downloadBtn:hover{background:var(--accent-dark);}
-  #downloadBtn:disabled{
-    opacity:0.4;
-    cursor:not-allowed;
-  }
-  #resetBtn{
-    background:transparent;
-    color:var(--muted);
-    border:1px solid var(--border);
-  }
-  #resetBtn:hover{color:var(--text); border-color:var(--muted);}
+
   .progressBox{
     margin-top:16px;
     display:none;
@@ -237,6 +118,115 @@
     border-radius:999px;
     transition:width .15s ease;
   }
+
+  .listActions{
+    display:none;
+    gap:8px;
+    margin-top:18px;
+    flex-wrap:wrap;
+  }
+  .listActions.show{display:flex;}
+  .listActions button{
+    padding:6px 12px;
+    font-size:0.8rem;
+    background:transparent;
+    color:var(--muted);
+    border:1px solid var(--border);
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .listActions button:hover{color:var(--text); border-color:var(--muted);}
+
+  .treeWrap{
+    margin-top:10px;
+    max-height:340px;
+    overflow-y:auto;
+    border:1px solid var(--border);
+    border-radius:10px;
+    display:none;
+    padding:6px 0;
+  }
+  .treeWrap.show{display:block;}
+
+  .tree-row{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 10px;
+    cursor:pointer;
+    user-select:none;
+    border-radius:6px;
+  }
+  .tree-row:hover{background:#1c2030;}
+
+  .tree-toggle{
+    width:16px;
+    height:16px;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--muted);
+    transition:transform .12s ease;
+  }
+  .tree-toggle.open{transform:rotate(90deg);}
+  .tree-toggle.spacer{visibility:hidden;}
+
+  .tree-row input[type=checkbox]{
+    flex-shrink:0;
+    accent-color:var(--accent);
+    width:15px;
+    height:15px;
+    cursor:pointer;
+  }
+  .tree-row input[type=checkbox]:disabled{
+    opacity:0.25;
+    cursor:default;
+  }
+
+  .tree-icon{
+    width:18px;
+    height:18px;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .tree-icon svg{width:100%; height:100%;}
+
+  .tree-name{
+    font-size:0.87rem;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .folder-row .tree-name{
+    color:var(--text);
+    font-weight:600;
+  }
+  .file-row .tree-name{
+    color:var(--muted);
+  }
+  .file-row.is-md .tree-name{
+    color:var(--text);
+    font-weight:400;
+  }
+  .file-row.non-md{
+    opacity:0.55;
+  }
+  .file-row.non-md .tree-name{
+    font-style:italic;
+  }
+  .tree-badge{
+    font-size:0.65rem;
+    color:var(--dim);
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:1px 5px;
+    margin-left:4px;
+    flex-shrink:0;
+  }
+
   .summary{
     display:flex;
     gap:20px;
@@ -255,17 +245,57 @@
     font-size:1.15rem;
     color:var(--accent);
   }
+
+  .actions{
+    margin-top:24px;
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  button.btn{
+    font:inherit;
+    border:none;
+    border-radius:10px;
+    padding:12px 20px;
+    font-size:0.95rem;
+    cursor:pointer;
+    transition:background .15s, opacity .15s;
+  }
+  #downloadTxtBtn{
+    background:var(--accent);
+    color:#0f1115;
+    font-weight:600;
+  }
+  #downloadTxtBtn:hover{background:var(--accent-dark);}
+  #downloadPdfBtn{
+    background:#2a2e38;
+    color:var(--text);
+    font-weight:600;
+    border:1px solid var(--border);
+  }
+  #downloadPdfBtn:hover{border-color:var(--accent);}
+  button.btn:disabled{
+    opacity:0.4;
+    cursor:not-allowed;
+  }
+  #resetBtn{
+    background:transparent;
+    color:var(--muted);
+    border:1px solid var(--border);
+  }
+  #resetBtn:hover{color:var(--text); border-color:var(--muted);}
 </style>
 </head>
 <body>
 
 <div class="card">
-  <h1>Conversor de pasta .md → .txt</h1>
+  <h1>Conversor de pasta .md → .txt / .pdf</h1>
   <p class="subtitle">
-    Selecione uma pasta do seu dispositivo. O aplicativo vai ler todas as subpastas,
-    encontrar todos os arquivos <strong>.md</strong> e juntar o conteúdo deles em
-    um único arquivo <strong>.txt</strong> para você baixar. Nada é enviado para
-    nenhum servidor — tudo acontece no seu navegador.
+    Selecione uma pasta do seu dispositivo. O app monta uma árvore de pastas e
+    arquivos — clique nas pastas para abrir ou fechar, e marque ou desmarque
+    o que quer incluir na conversão. Arquivos <strong>.md</strong> marcados
+    são combinados em um único arquivo <strong>.txt</strong> ou <strong>.pdf</strong>
+    para download. Tudo acontece no seu navegador, nada é enviado a servidores.
   </p>
 
   <label class="drop" id="dropZone">
@@ -289,24 +319,14 @@
     </div>
   </div>
 
-  <div class="excludeBox" id="excludeBox">
-    <label class="fieldLabel" for="excludeInput">Excluir pastas ou arquivos (opcional)</label>
-    <div class="excludeRow">
-      <input type="text" id="excludeInput" placeholder="ex: rascunhos/, template.md, /privado/">
-      <button id="applyExcludeBtn">Aplicar</button>
-    </div>
-    <div class="excludeHint">
-      Separe por vírgula. Qualquer arquivo cujo caminho contenha um dos termos digitados
-      será desmarcado automaticamente. Você também pode marcar/desmarcar cada arquivo
-      individualmente na lista abaixo.
-    </div>
-  </div>
-
-  <div class="filelist" id="fileList"></div>
-  <div class="listActions" id="listActions" style="display:none;">
+  <div class="listActions" id="listActions">
     <button id="selectAllBtn">Marcar todos</button>
     <button id="selectNoneBtn">Desmarcar todos</button>
+    <button id="expandAllBtn">Abrir todas as pastas</button>
+    <button id="collapseAllBtn">Fechar todas as pastas</button>
   </div>
+
+  <div class="treeWrap" id="treeWrap"></div>
 
   <div class="summary" id="summary" style="display:none;">
     <div class="stat"><b id="statTotal">0</b>arquivos na pasta</div>
@@ -315,131 +335,300 @@
   </div>
 
   <div class="actions">
-    <button id="downloadBtn" disabled>Baixar arquivo .txt</button>
-    <button id="resetBtn">Limpar</button>
+    <button class="btn" id="downloadTxtBtn" disabled>Baixar .txt</button>
+    <button class="btn" id="downloadPdfBtn" disabled>Baixar .pdf</button>
+    <button class="btn" id="resetBtn">Limpar</button>
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
+/* ---------- ícones ---------- */
+const ICONS = {
+  folderClosed: `<svg viewBox="0 0 24 24" fill="none"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z" fill="#e8b463" opacity="0.9"/></svg>`,
+  folderOpen: `<svg viewBox="0 0 24 24" fill="none"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h8a1 1 0 0 1 1 1l-1.5 8.5a1 1 0 0 1-1 .8H4.8a1 1 0 0 1-1-.8L2 9.4A1 1 0 0 1 3 8Z" fill="#e8b463"/></svg>`,
+  fileMd: `<svg viewBox="0 0 24 24" fill="none"><path d="M6 2h8l4 4v16H6V2Z" fill="#7c9eff" opacity="0.85"/><path d="M14 2v4h4" fill="none" stroke="#0f1115" stroke-width="1"/></svg>`,
+  fileOther: `<svg viewBox="0 0 24 24" fill="none"><path d="M6 2h8l4 4v16H6V2Z" fill="#5c6270" opacity="0.8"/><path d="M14 2v4h4" fill="none" stroke="#171a21" stroke-width="1"/></svg>`,
+  chevron: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`
+};
+
+/* ---------- elementos ---------- */
 const folderInput = document.getElementById('folderInput');
 const dropZone = document.getElementById('dropZone');
 const statusEl = document.getElementById('status');
-const fileListEl = document.getElementById('fileList');
-const downloadBtn = document.getElementById('downloadBtn');
+const treeWrap = document.getElementById('treeWrap');
+const downloadTxtBtn = document.getElementById('downloadTxtBtn');
+const downloadPdfBtn = document.getElementById('downloadPdfBtn');
 const resetBtn = document.getElementById('resetBtn');
 const summaryEl = document.getElementById('summary');
 const statTotal = document.getElementById('statTotal');
 const statMd = document.getElementById('statMd');
 const statIncluded = document.getElementById('statIncluded');
-const excludeBox = document.getElementById('excludeBox');
-const excludeInput = document.getElementById('excludeInput');
-const applyExcludeBtn = document.getElementById('applyExcludeBtn');
 const listActions = document.getElementById('listActions');
 const selectAllBtn = document.getElementById('selectAllBtn');
 const selectNoneBtn = document.getElementById('selectNoneBtn');
+const expandAllBtn = document.getElementById('expandAllBtn');
+const collapseAllBtn = document.getElementById('collapseAllBtn');
 const progressBox = document.getElementById('progressBox');
 const progressFill = document.getElementById('progressFill');
 const progressPct = document.getElementById('progressPct');
 const progressText = document.getElementById('progressText');
 
+let rootFolderName = 'pasta';
+let mdEntries = [];   // {path, text, include}
+let treeRoot = null;  // nó raiz da árvore (representa a pasta selecionada)
+
+/* ---------- utilidades de status/progresso ---------- */
+function setStatus(msg, type){
+  statusEl.textContent = msg;
+  statusEl.className = 'status' + (type ? ' ' + type : '');
+}
 function showProgress(label){
   progressBox.classList.add('show');
   progressText.textContent = label;
   setProgress(0);
 }
-
 function setProgress(pct){
   progressFill.style.width = pct + '%';
   progressPct.textContent = Math.round(pct) + '%';
 }
-
 function hideProgress(){
   progressBox.classList.remove('show');
 }
 
-let rootFolderName = 'pasta';
-// each item: { path, text, include }
-let mdEntries = [];
-
-function setStatus(msg, type){
-  statusEl.textContent = msg;
-  statusEl.className = 'status' + (type ? ' ' + type : '');
-}
-
 function resetUI(){
   mdEntries = [];
+  treeRoot = null;
   folderInput.value = '';
-  excludeInput.value = '';
   setStatus('');
-  fileListEl.innerHTML = '';
-  fileListEl.classList.remove('show');
-  excludeBox.classList.remove('show');
-  listActions.style.display = 'none';
+  treeWrap.innerHTML = '';
+  treeWrap.classList.remove('show');
+  listActions.classList.remove('show');
   summaryEl.style.display = 'none';
-  downloadBtn.disabled = true;
+  downloadTxtBtn.disabled = true;
+  downloadPdfBtn.disabled = true;
   hideProgress();
 }
-
 resetBtn.addEventListener('click', resetUI);
+
+/* ---------- construção da árvore ---------- */
+function buildTree(fileMetas, rootName){
+  const root = { type:'folder', name: rootName, children: [], expanded: true, parent: null, mdEntries: [] };
+  const folderIndex = new Map();
+  folderIndex.set('', root);
+
+  fileMetas.forEach(meta => {
+    const segments = meta.path.split('/');
+    segments.shift(); // remove o nome da pasta raiz (já representado pelo nó root)
+    const fileName = segments.pop();
+    let currentKey = '';
+    let parent = root;
+    for(const seg of segments){
+      currentKey = currentKey ? currentKey + '/' + seg : seg;
+      let folderNode = folderIndex.get(currentKey);
+      if(!folderNode){
+        folderNode = { type:'folder', name: seg, children: [], expanded: true, parent, mdEntries: [] };
+        folderIndex.set(currentKey, folderNode);
+        parent.children.push(folderNode);
+      }
+      parent = folderNode;
+    }
+    const fileNode = { type:'file', name: fileName, isMd: meta.isMd, entry: meta.entry, parent };
+    parent.children.push(fileNode);
+    if(meta.isMd){
+      let anc = parent;
+      while(anc){ anc.mdEntries.push(meta.entry); anc = anc.parent; }
+    }
+  });
+
+  function sortNode(node){
+    node.children.sort((a,b) => {
+      if(a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+      return a.name.localeCompare(b.name, 'pt-BR');
+    });
+    node.children.forEach(c => { if(c.type === 'folder') sortNode(c); });
+  }
+  sortNode(root);
+  return root;
+}
+
+/* ---------- renderização ---------- */
+function renderTree(root){
+  treeWrap.innerHTML = '';
+  renderNode(root, treeWrap, 0);
+}
+
+function makeIconSpan(svg){
+  const span = document.createElement('span');
+  span.className = 'tree-icon';
+  span.innerHTML = svg;
+  return span;
+}
+
+function renderNode(node, container, depth){
+  if(node.type === 'folder'){
+    const row = document.createElement('div');
+    row.className = 'tree-row folder-row';
+    row.style.paddingLeft = (10 + depth * 18) + 'px';
+
+    const toggle = document.createElement('span');
+    toggle.className = 'tree-toggle' + (node.children.length ? (node.expanded ? ' open' : '') : ' spacer');
+    toggle.innerHTML = ICONS.chevron;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    if(node.mdEntries.length === 0) checkbox.disabled = true;
+
+    const icon = makeIconSpan(node.expanded ? ICONS.folderOpen : ICONS.folderClosed);
+
+    const name = document.createElement('span');
+    name.className = 'tree-name';
+    name.textContent = node.name;
+
+    const badge = document.createElement('span');
+    badge.className = 'tree-badge';
+    badge.textContent = node.mdEntries.length + ' md';
+
+    row.appendChild(toggle);
+    row.appendChild(checkbox);
+    row.appendChild(icon);
+    row.appendChild(name);
+    if(node.mdEntries.length > 0) row.appendChild(badge);
+    container.appendChild(row);
+
+    const childrenEl = document.createElement('div');
+    childrenEl.style.display = node.expanded ? 'block' : 'none';
+    container.appendChild(childrenEl);
+
+    node.rowEl = row;
+    node.checkboxEl = checkbox;
+    node.iconEl = icon;
+    node.toggleEl = toggle;
+    node.childrenEl = childrenEl;
+
+    function toggleExpand(){
+      if(!node.children.length) return;
+      node.expanded = !node.expanded;
+      childrenEl.style.display = node.expanded ? 'block' : 'none';
+      toggle.classList.toggle('open', node.expanded);
+      icon.innerHTML = node.expanded ? ICONS.folderOpen : ICONS.folderClosed;
+    }
+    row.addEventListener('click', (e) => {
+      if(e.target === checkbox) return;
+      toggleExpand();
+    });
+    checkbox.addEventListener('click', (e) => e.stopPropagation());
+    checkbox.addEventListener('change', () => {
+      setSubtreeInclude(node, checkbox.checked);
+      updateAncestors(node.parent);
+      updateIncludedCount();
+    });
+
+    node.children.forEach(child => renderNode(child, childrenEl, depth + 1));
+    refreshFolderCheckbox(node);
+
+  } else {
+    const row = document.createElement('div');
+    row.className = 'tree-row file-row ' + (node.isMd ? 'is-md' : 'non-md');
+    row.style.paddingLeft = (10 + depth * 18 + 22) + 'px';
+
+    if(node.isMd){
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = node.entry.include;
+      checkbox.addEventListener('click', (e) => e.stopPropagation());
+      checkbox.addEventListener('change', () => {
+        node.entry.include = checkbox.checked;
+        updateAncestors(node.parent);
+        updateIncludedCount();
+      });
+      row.appendChild(checkbox);
+      node.checkboxEl = checkbox;
+    } else {
+      const spacer = document.createElement('span');
+      spacer.style.width = '15px';
+      spacer.style.flexShrink = '0';
+      row.appendChild(spacer);
+    }
+
+    const icon = makeIconSpan(node.isMd ? ICONS.fileMd : ICONS.fileOther);
+    const name = document.createElement('span');
+    name.className = 'tree-name';
+    name.textContent = node.name;
+
+    row.appendChild(icon);
+    row.appendChild(name);
+    container.appendChild(row);
+  }
+}
+
+/* ---------- seleção em cascata ---------- */
+function setSubtreeInclude(node, value){
+  if(node.type === 'file'){
+    if(node.isMd){
+      node.entry.include = value;
+      if(node.checkboxEl) node.checkboxEl.checked = value;
+    }
+  } else {
+    node.children.forEach(c => setSubtreeInclude(c, value));
+    refreshFolderCheckbox(node);
+  }
+}
+
+function refreshFolderCheckbox(node){
+  if(!node.checkboxEl) return;
+  const total = node.mdEntries.length;
+  if(total === 0){
+    node.checkboxEl.checked = false;
+    node.checkboxEl.indeterminate = false;
+    return;
+  }
+  const includedCount = node.mdEntries.filter(e => e.include).length;
+  if(includedCount === 0){
+    node.checkboxEl.checked = false;
+    node.checkboxEl.indeterminate = false;
+  } else if(includedCount === total){
+    node.checkboxEl.checked = true;
+    node.checkboxEl.indeterminate = false;
+  } else {
+    node.checkboxEl.checked = false;
+    node.checkboxEl.indeterminate = true;
+  }
+}
+
+function updateAncestors(folderNode){
+  let cur = folderNode;
+  while(cur){
+    refreshFolderCheckbox(cur);
+    cur = cur.parent;
+  }
+}
 
 function updateIncludedCount(){
   const included = mdEntries.filter(e => e.include).length;
   statIncluded.textContent = included;
-  downloadBtn.disabled = included === 0;
+  downloadTxtBtn.disabled = included === 0;
+  downloadPdfBtn.disabled = included === 0;
 }
 
-function renderFileList(){
-  fileListEl.innerHTML = '';
-  mdEntries.forEach((entry, idx) => {
-    const row = document.createElement('div');
-    row.className = 'filerow' + (entry.include ? '' : ' excluded');
-
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = entry.include;
-    checkbox.id = 'file-' + idx;
-    checkbox.addEventListener('change', () => {
-      entry.include = checkbox.checked;
-      row.classList.toggle('excluded', !entry.include);
-      updateIncludedCount();
-    });
-
-    const label = document.createElement('label');
-    label.htmlFor = 'file-' + idx;
-    label.textContent = entry.path;
-
-    row.appendChild(checkbox);
-    row.appendChild(label);
-    fileListEl.appendChild(row);
-  });
+/* ---------- expandir / colapsar tudo ---------- */
+function setExpandAll(node, value){
+  if(node.type !== 'folder') return;
+  node.expanded = value;
+  if(node.childrenEl) node.childrenEl.style.display = value ? 'block' : 'none';
+  if(node.toggleEl) node.toggleEl.classList.toggle('open', value && node.children.length > 0);
+  if(node.iconEl) node.iconEl.innerHTML = value ? ICONS.folderOpen : ICONS.folderClosed;
+  node.children.forEach(c => setExpandAll(c, value));
 }
 
-applyExcludeBtn.addEventListener('click', () => {
-  const raw = excludeInput.value.trim();
-  const terms = raw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
-  mdEntries.forEach(entry => {
-    if(terms.length === 0) return;
-    const path = entry.path.toLowerCase();
-    const matches = terms.some(term => path.includes(term));
-    if(matches) entry.include = false;
-  });
-  renderFileList();
-  updateIncludedCount();
-  setStatus(`Filtro aplicado. ${mdEntries.filter(e => e.include).length} de ${mdEntries.length} arquivo(s) selecionados.`, 'ok');
+selectAllBtn.addEventListener('click', () => { setSubtreeInclude(treeRoot, true); updateIncludedCount(); });
+selectNoneBtn.addEventListener('click', () => { setSubtreeInclude(treeRoot, false); updateIncludedCount(); });
+expandAllBtn.addEventListener('click', () => setExpandAll(treeRoot, true));
+collapseAllBtn.addEventListener('click', () => {
+  treeRoot.children.forEach(c => setExpandAll(c, false));
 });
 
-selectAllBtn.addEventListener('click', () => {
-  mdEntries.forEach(e => e.include = true);
-  renderFileList();
-  updateIncludedCount();
-});
-
-selectNoneBtn.addEventListener('click', () => {
-  mdEntries.forEach(e => e.include = false);
-  renderFileList();
-  updateIncludedCount();
-});
-
+/* ---------- leitura de arquivos ---------- */
 folderInput.addEventListener('change', async (e) => {
   const files = Array.from(e.target.files);
   if(!files.length){
@@ -449,11 +638,7 @@ folderInput.addEventListener('change', async (e) => {
   await processFiles(files);
 });
 
-// drag and drop support (best effort — webkitGetAsEntry for folders)
-dropZone.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  dropZone.classList.add('dragover');
-});
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
 dropZone.addEventListener('drop', async (e) => {
   e.preventDefault();
@@ -476,18 +661,18 @@ dropZone.addEventListener('drop', async (e) => {
       });
     } else if(entry.isDirectory){
       const reader = entry.createReader();
-      const entries = await new Promise((resolve) => {
-        let all = [];
+      const all = await new Promise((resolve) => {
+        let acc = [];
         function readBatch(){
           reader.readEntries((batch) => {
-            if(!batch.length){ resolve(all); return; }
-            all = all.concat(batch);
+            if(!batch.length){ resolve(acc); return; }
+            acc = acc.concat(batch);
             readBatch();
           });
         }
         readBatch();
       });
-      for(const child of entries){
+      for(const child of all){
         await readEntry(child, path + entry.name + '/');
       }
     }
@@ -506,10 +691,8 @@ dropZone.addEventListener('drop', async (e) => {
 
 async function processFiles(files){
   setStatus('Lendo arquivos...');
-  fileListEl.innerHTML = '';
-  fileListEl.classList.add('show');
+  treeWrap.innerHTML = '';
 
-  // determine root folder name from first file's path
   const firstPath = files[0].webkitRelativePath || files[0].relativePath || files[0].name;
   rootFolderName = firstPath.split('/')[0] || 'pasta';
 
@@ -524,55 +707,68 @@ async function processFiles(files){
 
   if(!mdFiles.length){
     setStatus('Nenhum arquivo .md foi encontrado nessa pasta.', 'error');
-    downloadBtn.disabled = true;
-    excludeBox.classList.remove('show');
-    listActions.style.display = 'none';
+    downloadTxtBtn.disabled = true;
+    downloadPdfBtn.disabled = true;
+    listActions.classList.remove('show');
+    treeWrap.classList.remove('show');
     return;
   }
 
-  // sort by path for predictable order
-  mdFiles.sort((a, b) => {
+  files.sort((a, b) => {
     const pa = a.webkitRelativePath || a.relativePath || a.name;
     const pb = b.webkitRelativePath || b.relativePath || b.name;
     return pa.localeCompare(pb);
   });
 
   mdEntries = [];
-  showProgress('Lendo arquivos .md...');
-  for(let i = 0; i < mdFiles.length; i++){
-    const file = mdFiles[i];
+  const fileMetas = [];
+  showProgress('Lendo arquivos...');
+  for(let i = 0; i < files.length; i++){
+    const file = files[i];
     const path = file.webkitRelativePath || file.relativePath || file.name;
-    const text = await file.text();
-    mdEntries.push({ path, text, include: true });
-    setProgress(((i + 1) / mdFiles.length) * 100);
+    const isMd = path.toLowerCase().endsWith('.md');
+    if(isMd){
+      const text = await file.text();
+      const entry = { path, text, include: true };
+      mdEntries.push(entry);
+      fileMetas.push({ path, isMd: true, entry });
+    } else {
+      fileMetas.push({ path, isMd: false, entry: null });
+    }
+    setProgress(((i + 1) / files.length) * 100);
   }
   hideProgress();
 
-  renderFileList();
+  treeRoot = buildTree(fileMetas, rootFolderName);
+  renderTree(treeRoot);
+  treeWrap.classList.add('show');
+  listActions.classList.add('show');
   updateIncludedCount();
-  excludeBox.classList.add('show');
-  listActions.style.display = 'flex';
-  setStatus(`Pronto! ${mdFiles.length} arquivo(s) .md encontrados. Desmarque ou filtre o que não quer converter.`, 'ok');
+  setStatus(`Pronto! ${mdFiles.length} arquivo(s) .md encontrados. Use as pastas para abrir/fechar e as caixas para escolher o que converter.`, 'ok');
 }
 
-downloadBtn.addEventListener('click', async () => {
-  const included = mdEntries.filter(e => e.include);
+/* ---------- geração dos arquivos finais ---------- */
+function buildCombinedParts(){
+  return mdEntries.filter(e => e.include).map(e => ({ path: e.path, text: e.text }));
+}
+
+downloadTxtBtn.addEventListener('click', async () => {
+  const included = buildCombinedParts();
   if(!included.length) return;
 
-  downloadBtn.disabled = true;
-  showProgress('Montando arquivo final...');
+  downloadTxtBtn.disabled = true;
+  showProgress('Montando arquivo .txt...');
 
   const parts = [];
   for(let i = 0; i < included.length; i++){
     const e = included[i];
     parts.push(`===== ${e.path} =====\n\n${e.text.trim()}\n`);
     setProgress(((i + 1) / included.length) * 100);
-    // yield to the browser so the progress bar can render on large batches
     if(i % 20 === 0) await new Promise(r => setTimeout(r, 0));
   }
   const combinedText = parts.join('\n\n');
 
-  const blob = new Blob([combinedText], {type: 'text/plain;charset=utf-8'});
+  const blob = new Blob([combinedText], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -583,18 +779,68 @@ downloadBtn.addEventListener('click', async () => {
   URL.revokeObjectURL(url);
 
   hideProgress();
-  downloadBtn.disabled = false;
+  downloadTxtBtn.disabled = false;
 });
 
-// registro do service worker (funciona apenas quando servido via HTTPS ou localhost)
+downloadPdfBtn.addEventListener('click', async () => {
+  const included = buildCombinedParts();
+  if(!included.length) return;
+
+  if(!window.jspdf){
+    setStatus('Não foi possível carregar o gerador de PDF (verifique sua conexão com a internet).', 'error');
+    return;
+  }
+
+  downloadPdfBtn.disabled = true;
+  showProgress('Montando arquivo .pdf...');
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const margin = 40;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const maxWidth = pageWidth - margin * 2;
+  const lineHeight = 13;
+  let y = margin;
+
+  for(let i = 0; i < included.length; i++){
+    const e = included[i];
+
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(10);
+    const headerLines = doc.splitTextToSize(`===== ${e.path} =====`, maxWidth);
+    for(const hl of headerLines){
+      if(y > pageHeight - margin){ doc.addPage(); y = margin; }
+      doc.text(hl, margin, y);
+      y += lineHeight;
+    }
+    y += lineHeight / 2;
+
+    doc.setFont('courier', 'normal');
+    const bodyLines = doc.splitTextToSize(e.text.trim(), maxWidth);
+    for(const bl of bodyLines){
+      if(y > pageHeight - margin){ doc.addPage(); y = margin; }
+      doc.text(bl, margin, y);
+      y += lineHeight;
+    }
+    y += lineHeight * 1.2;
+
+    setProgress(((i + 1) / included.length) * 100);
+    if(i % 5 === 0) await new Promise(r => setTimeout(r, 0));
+  }
+
+  doc.save(`${rootFolderName}-arquivos-md.pdf`);
+
+  hideProgress();
+  downloadPdfBtn.disabled = false;
+});
+
+/* ---------- service worker (PWA) ---------- */
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js').catch(() => {
-      // silenciosamente ignora se estiver rodando em file:// ou sem suporte
-    });
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
   });
 }
 </script>
-
 </body>
 </html>

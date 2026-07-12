@@ -246,6 +246,38 @@
     color:var(--accent);
   }
 
+  .filenameBox{
+    margin-top:20px;
+    display:none;
+  }
+  .filenameBox.show{display:block;}
+  .filenameBox .fieldLabel{
+    display:block;
+    font-size:0.85rem;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .filenameBox input[type=text]{
+    width:100%;
+    font:inherit;
+    background:#1c2030;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px 12px;
+    color:var(--text);
+    font-size:0.9rem;
+  }
+  .filenameBox input[type=text]:focus{
+    outline:none;
+    border-color:var(--accent);
+  }
+  .fsapiHint{
+    font-size:0.78rem;
+    color:var(--muted);
+    margin-top:6px;
+    line-height:1.4;
+  }
+
   .actions{
     margin-top:24px;
     display:flex;
@@ -334,6 +366,12 @@
     <div class="stat"><b id="statIncluded">0</b>selecionados para conversão</div>
   </div>
 
+  <div class="filenameBox" id="filenameBox">
+    <label class="fieldLabel" for="filenameInput">Nome do arquivo de saída</label>
+    <input type="text" id="filenameInput" placeholder="arquivos-convertidos">
+    <div class="fsapiHint" id="fsapiHint"></div>
+  </div>
+
   <div class="actions">
     <button class="btn" id="downloadTxtBtn" disabled>Baixar .txt</button>
     <button class="btn" id="downloadPdfBtn" disabled>Baixar .pdf</button>
@@ -373,6 +411,19 @@ const progressBox = document.getElementById('progressBox');
 const progressFill = document.getElementById('progressFill');
 const progressPct = document.getElementById('progressPct');
 const progressText = document.getElementById('progressText');
+const filenameBox = document.getElementById('filenameBox');
+const filenameInput = document.getElementById('filenameInput');
+const fsapiHint = document.getElementById('fsapiHint');
+
+const SUPPORTS_SAVE_PICKER = 'showSaveFilePicker' in window;
+fsapiHint.textContent = SUPPORTS_SAVE_PICKER
+  ? 'Ao baixar, este navegador vai deixar você escolher a pasta e sobrescrever um arquivo existente, se quiser.'
+  : 'Este navegador vai salvar direto na pasta de downloads padrão, usando o nome definido acima.';
+
+function sanitizeFilename(name){
+  const cleaned = name.trim().replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ');
+  return cleaned || 'arquivos-convertidos';
+}
 
 let rootFolderName = 'pasta';
 let mdEntries = [];   // {path, text, include}
@@ -404,6 +455,7 @@ function resetUI(){
   treeWrap.innerHTML = '';
   treeWrap.classList.remove('show');
   listActions.classList.remove('show');
+  filenameBox.classList.remove('show');
   summaryEl.style.display = 'none';
   downloadTxtBtn.disabled = true;
   downloadPdfBtn.disabled = true;
@@ -743,8 +795,48 @@ async function processFiles(files){
   renderTree(treeRoot);
   treeWrap.classList.add('show');
   listActions.classList.add('show');
+  filenameBox.classList.add('show');
+  if(!filenameInput.value.trim()){
+    filenameInput.value = `${rootFolderName}-arquivos-md`;
+  }
   updateIncludedCount();
   setStatus(`Pronto! ${mdFiles.length} arquivo(s) .md encontrados. Use as pastas para abrir/fechar e as caixas para escolher o que converter.`, 'ok');
+}
+
+/* ---------- salvar arquivo (com seletor nativo quando disponível) ---------- */
+async function saveFile(blob, filenameNoExt, extension, mimeType){
+  const filename = sanitizeFilename(filenameNoExt) + '.' + extension;
+
+  if(SUPPORTS_SAVE_PICKER){
+    try{
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{
+          description: extension.toUpperCase() + ' file',
+          accept: { [mimeType]: ['.' + extension] }
+        }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return true;
+    } catch(err){
+      if(err && err.name === 'AbortError'){
+        return false; // usuário cancelou o diálogo
+      }
+      // qualquer outro erro: cai no fallback abaixo
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  return true;
 }
 
 /* ---------- geração dos arquivos finais ---------- */
@@ -767,18 +859,11 @@ downloadTxtBtn.addEventListener('click', async () => {
     if(i % 20 === 0) await new Promise(r => setTimeout(r, 0));
   }
   const combinedText = parts.join('\n\n');
-
   const blob = new Blob([combinedText], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${rootFolderName}-arquivos-md.txt`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 
   hideProgress();
+  const saved = await saveFile(blob, filenameInput.value, 'txt', 'text/plain');
+  setStatus(saved ? 'Arquivo .txt salvo com sucesso.' : 'Download cancelado.', saved ? 'ok' : '');
   downloadTxtBtn.disabled = false;
 });
 
@@ -829,9 +914,11 @@ downloadPdfBtn.addEventListener('click', async () => {
     if(i % 5 === 0) await new Promise(r => setTimeout(r, 0));
   }
 
-  doc.save(`${rootFolderName}-arquivos-md.pdf`);
+  const pdfBlob = doc.output('blob');
 
   hideProgress();
+  const saved = await saveFile(pdfBlob, filenameInput.value, 'pdf', 'application/pdf');
+  setStatus(saved ? 'Arquivo .pdf salvo com sucesso.' : 'Download cancelado.', saved ? 'ok' : '');
   downloadPdfBtn.disabled = false;
 });
 

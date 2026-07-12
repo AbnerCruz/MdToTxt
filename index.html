@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Conversor de Pasta MD → TXT/PDF</title>
+<title id="docTitle">Markdown to TXT/PDF Converter</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f1115">
 <link rel="icon" href="icon-192.png">
@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="MD → TXT">
+<meta name="apple-mobile-web-app-title" content="MD Converter">
 <style>
   :root{
     --bg:#0f1115;
@@ -45,6 +45,12 @@
     border-radius:16px;
     padding:32px;
   }
+  .headerRow{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:16px;
+  }
   h1{
     font-size:1.4rem;
     margin:0 0 6px;
@@ -55,6 +61,19 @@
     font-size:0.95rem;
     line-height:1.5;
   }
+  .langSelect{
+    flex-shrink:0;
+    font:inherit;
+    font-size:0.82rem;
+    background:#1c2030;
+    color:var(--text);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:7px 10px;
+    cursor:pointer;
+  }
+  .langSelect:focus{outline:none; border-color:var(--accent);}
+
   .drop{
     border:2px dashed var(--border);
     border-radius:12px;
@@ -321,21 +340,24 @@
 <body>
 
 <div class="card">
-  <h1>Conversor de pasta .md → .txt / .pdf</h1>
-  <p class="subtitle">
-    Selecione uma pasta do seu dispositivo. O app monta uma árvore de pastas e
-    arquivos — clique nas pastas para abrir ou fechar, e marque ou desmarque
-    o que quer incluir na conversão. Arquivos <strong>.md</strong> marcados
-    são combinados em um único arquivo <strong>.txt</strong> ou <strong>.pdf</strong>
-    para download. Tudo acontece no seu navegador, nada é enviado a servidores.
-  </p>
+  <div class="headerRow">
+    <div>
+      <h1 id="pageTitle">Markdown to TXT/PDF Converter</h1>
+      <p class="subtitle" id="subtitleText"></p>
+    </div>
+    <select class="langSelect" id="langSelect">
+      <option value="en">English</option>
+      <option value="pt">Português</option>
+      <option value="es">Español</option>
+    </select>
+  </div>
 
   <label class="drop" id="dropZone">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
     </svg>
-    <strong>Clique para selecionar uma pasta</strong>
-    <span>ou arraste uma pasta até aqui</span>
+    <strong id="dropTitle"></strong>
+    <span id="dropSubtitle"></span>
     <input type="file" id="folderInput" webkitdirectory directory multiple>
   </label>
 
@@ -343,7 +365,7 @@
 
   <div class="progressBox" id="progressBox">
     <div class="progressLabel">
-      <span id="progressText">Lendo arquivos...</span>
+      <span id="progressText"></span>
       <span id="progressPct">0%</span>
     </div>
     <div class="progressTrack">
@@ -352,35 +374,151 @@
   </div>
 
   <div class="listActions" id="listActions">
-    <button id="selectAllBtn">Marcar todos</button>
-    <button id="selectNoneBtn">Desmarcar todos</button>
-    <button id="expandAllBtn">Abrir todas as pastas</button>
-    <button id="collapseAllBtn">Fechar todas as pastas</button>
+    <button id="selectAllBtn"></button>
+    <button id="selectNoneBtn"></button>
+    <button id="expandAllBtn"></button>
+    <button id="collapseAllBtn"></button>
   </div>
 
   <div class="treeWrap" id="treeWrap"></div>
 
   <div class="summary" id="summary" style="display:none;">
-    <div class="stat"><b id="statTotal">0</b>arquivos na pasta</div>
-    <div class="stat"><b id="statMd">0</b>arquivos .md encontrados</div>
-    <div class="stat"><b id="statIncluded">0</b>selecionados para conversão</div>
+    <div class="stat"><b id="statTotal">0</b><span id="statTotalLabel"></span></div>
+    <div class="stat"><b id="statMd">0</b><span id="statMdLabel"></span></div>
+    <div class="stat"><b id="statIncluded">0</b><span id="statIncludedLabel"></span></div>
   </div>
 
   <div class="filenameBox" id="filenameBox">
-    <label class="fieldLabel" for="filenameInput">Nome do arquivo de saída</label>
-    <input type="text" id="filenameInput" placeholder="arquivos-convertidos">
+    <label class="fieldLabel" id="filenameLabel" for="filenameInput"></label>
+    <input type="text" id="filenameInput">
     <div class="fsapiHint" id="fsapiHint"></div>
   </div>
 
   <div class="actions">
-    <button class="btn" id="downloadTxtBtn" disabled>Baixar .txt</button>
-    <button class="btn" id="downloadPdfBtn" disabled>Baixar .pdf</button>
-    <button class="btn" id="resetBtn">Limpar</button>
+    <button class="btn" id="downloadTxtBtn" disabled></button>
+    <button class="btn" id="downloadPdfBtn" disabled></button>
+    <button class="btn" id="resetBtn"></button>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
+/* ---------- i18n ---------- */
+const I18N = {
+  en: {
+    docTitle: "Markdown to TXT/PDF Converter",
+    pageTitle: "Markdown to TXT/PDF Converter",
+    subtitle: "Select a folder from your device. The app builds a tree of its folders and files — click a folder to expand or collapse it, and check or uncheck items to control what gets included. Selected .md files are combined into a single .txt or .pdf file for download. Everything runs locally in your browser; nothing is uploaded to a server.",
+    dropTitle: "Click to select a folder",
+    dropSubtitle: "or drag a folder here",
+    statusNoFilesInFolder: "No files were found in that folder.",
+    statusReadingDragged: "Reading files from the dropped folder…",
+    statusNoFilesFound: "No files were found.",
+    statusReadingFiles: "Reading files…",
+    statusNoMdFound: "No .md files were found in that folder.",
+    statusReady: (n) => `Ready. Found ${n} Markdown file(s). Use the folder tree to expand or collapse folders and choose what to convert.`,
+    statusPdfLibError: "The PDF generator could not be loaded. Please check your internet connection.",
+    statusTxtSaved: "The .txt file was saved successfully.",
+    statusPdfSaved: "The .pdf file was saved successfully.",
+    statusDownloadCancelled: "Download cancelled.",
+    progressReading: "Reading files…",
+    progressBuildingTxt: "Building the .txt file…",
+    progressBuildingPdf: "Building the .pdf file…",
+    btnSelectAll: "Select all",
+    btnSelectNone: "Deselect all",
+    btnExpandAll: "Expand all folders",
+    btnCollapseAll: "Collapse all folders",
+    statTotalLabel: "files in folder",
+    statMdLabel: "Markdown files found",
+    statIncludedLabel: "selected for conversion",
+    filenameLabel: "Output file name",
+    filenamePlaceholder: "converted-files",
+    fsapiHintSupported: "When you download, your browser will let you choose the destination folder and overwrite an existing file if needed.",
+    fsapiHintFallback: "This browser saves directly to the default downloads folder, using the name set above.",
+    btnDownloadTxt: "Download .txt",
+    btnDownloadPdf: "Download .pdf",
+    btnReset: "Clear",
+    defaultFilenameSuffix: "md-files"
+  },
+  pt: {
+    docTitle: "Conversor de Markdown para TXT/PDF",
+    pageTitle: "Conversor de Markdown para TXT/PDF",
+    subtitle: "Selecione uma pasta do seu dispositivo. O aplicativo organiza suas pastas e arquivos em uma árvore — clique em uma pasta para abri-la ou fechá-la, e marque ou desmarque os itens que deseja incluir. Os arquivos .md selecionados são combinados em um único arquivo .txt ou .pdf para download. Todo o processamento ocorre localmente no navegador; nenhum dado é enviado a servidores.",
+    dropTitle: "Clique para selecionar uma pasta",
+    dropSubtitle: "ou arraste uma pasta até aqui",
+    statusNoFilesInFolder: "Nenhum arquivo foi encontrado nessa pasta.",
+    statusReadingDragged: "Lendo arquivos da pasta arrastada…",
+    statusNoFilesFound: "Nenhum arquivo foi encontrado.",
+    statusReadingFiles: "Lendo arquivos…",
+    statusNoMdFound: "Nenhum arquivo .md foi encontrado nessa pasta.",
+    statusReady: (n) => `Pronto. Foram encontrados ${n} arquivo(s) Markdown. Use a árvore de pastas para abrir ou fechar diretórios e escolher o que converter.`,
+    statusPdfLibError: "Não foi possível carregar o gerador de PDF. Verifique sua conexão com a internet.",
+    statusTxtSaved: "O arquivo .txt foi salvo com sucesso.",
+    statusPdfSaved: "O arquivo .pdf foi salvo com sucesso.",
+    statusDownloadCancelled: "Download cancelado.",
+    progressReading: "Lendo arquivos…",
+    progressBuildingTxt: "Gerando o arquivo .txt…",
+    progressBuildingPdf: "Gerando o arquivo .pdf…",
+    btnSelectAll: "Selecionar todos",
+    btnSelectNone: "Desmarcar todos",
+    btnExpandAll: "Abrir todas as pastas",
+    btnCollapseAll: "Fechar todas as pastas",
+    statTotalLabel: "arquivos na pasta",
+    statMdLabel: "arquivos Markdown encontrados",
+    statIncludedLabel: "selecionados para conversão",
+    filenameLabel: "Nome do arquivo de saída",
+    filenamePlaceholder: "arquivos-convertidos",
+    fsapiHintSupported: "Ao baixar, o navegador permitirá escolher a pasta de destino e sobrescrever um arquivo existente, se necessário.",
+    fsapiHintFallback: "Este navegador salva diretamente na pasta padrão de downloads, usando o nome definido acima.",
+    btnDownloadTxt: "Baixar .txt",
+    btnDownloadPdf: "Baixar .pdf",
+    btnReset: "Limpar",
+    defaultFilenameSuffix: "arquivos-md"
+  },
+  es: {
+    docTitle: "Conversor de Markdown a TXT/PDF",
+    pageTitle: "Conversor de Markdown a TXT/PDF",
+    subtitle: "Selecciona una carpeta de tu dispositivo. La aplicación organiza sus carpetas y archivos en un árbol — haz clic en una carpeta para expandirla o contraerla, y marca o desmarca los elementos que deseas incluir. Los archivos .md seleccionados se combinan en un único archivo .txt o .pdf para descargar. Todo el procesamiento ocurre localmente en el navegador; no se envía ningún dato a servidores.",
+    dropTitle: "Haz clic para seleccionar una carpeta",
+    dropSubtitle: "o arrastra una carpeta aquí",
+    statusNoFilesInFolder: "No se encontraron archivos en esa carpeta.",
+    statusReadingDragged: "Leyendo archivos de la carpeta arrastrada…",
+    statusNoFilesFound: "No se encontraron archivos.",
+    statusReadingFiles: "Leyendo archivos…",
+    statusNoMdFound: "No se encontraron archivos .md en esa carpeta.",
+    statusReady: (n) => `Listo. Se encontraron ${n} archivo(s) Markdown. Usa el árbol de carpetas para abrir o cerrar directorios y elegir qué convertir.`,
+    statusPdfLibError: "No se pudo cargar el generador de PDF. Verifica tu conexión a internet.",
+    statusTxtSaved: "El archivo .txt se guardó correctamente.",
+    statusPdfSaved: "El archivo .pdf se guardó correctamente.",
+    statusDownloadCancelled: "Descarga cancelada.",
+    progressReading: "Leyendo archivos…",
+    progressBuildingTxt: "Generando el archivo .txt…",
+    progressBuildingPdf: "Generando el archivo .pdf…",
+    btnSelectAll: "Seleccionar todo",
+    btnSelectNone: "Deseleccionar todo",
+    btnExpandAll: "Expandir todas las carpetas",
+    btnCollapseAll: "Contraer todas las carpetas",
+    statTotalLabel: "archivos en la carpeta",
+    statMdLabel: "archivos Markdown encontrados",
+    statIncludedLabel: "seleccionados para conversión",
+    filenameLabel: "Nombre del archivo de salida",
+    filenamePlaceholder: "archivos-convertidos",
+    fsapiHintSupported: "Al descargar, el navegador te permitirá elegir la carpeta de destino y sobrescribir un archivo existente si lo necesitas.",
+    fsapiHintFallback: "Este navegador guarda directamente en la carpeta de descargas predeterminada, usando el nombre definido arriba.",
+    btnDownloadTxt: "Descargar .txt",
+    btnDownloadPdf: "Descargar .pdf",
+    btnReset: "Limpiar",
+    defaultFilenameSuffix: "archivos-md"
+  }
+};
+
+let currentLang = 'en';
+function t(key, ...args){
+  const dict = I18N[currentLang] || I18N.en;
+  const val = dict[key];
+  return typeof val === 'function' ? val(...args) : val;
+}
+
 /* ---------- ícones ---------- */
 const ICONS = {
   folderClosed: `<svg viewBox="0 0 24 24" fill="none"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z" fill="#e8b463" opacity="0.9"/></svg>`,
@@ -414,22 +552,57 @@ const progressText = document.getElementById('progressText');
 const filenameBox = document.getElementById('filenameBox');
 const filenameInput = document.getElementById('filenameInput');
 const fsapiHint = document.getElementById('fsapiHint');
+const langSelect = document.getElementById('langSelect');
 
 const SUPPORTS_SAVE_PICKER = 'showSaveFilePicker' in window;
-fsapiHint.textContent = SUPPORTS_SAVE_PICKER
-  ? 'Ao baixar, este navegador vai deixar você escolher a pasta e sobrescrever um arquivo existente, se quiser.'
-  : 'Este navegador vai salvar direto na pasta de downloads padrão, usando o nome definido acima.';
 
-function sanitizeFilename(name){
-  const cleaned = name.trim().replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ');
-  return cleaned || 'arquivos-convertidos';
-}
-
-let rootFolderName = 'pasta';
+let rootFolderName = 'folder';
 let mdEntries = [];   // {path, text, include}
 let treeRoot = null;  // nó raiz da árvore (representa a pasta selecionada)
+let lastFilenameWasAuto = true; // controla se o nome do arquivo ainda é o sugerido automaticamente
 
-/* ---------- utilidades de status/progresso ---------- */
+/* ---------- aplicar traduções na interface estática ---------- */
+function applyStaticTexts(){
+  document.getElementById('docTitle').textContent = t('docTitle');
+  document.getElementById('pageTitle').textContent = t('pageTitle');
+  document.getElementById('subtitleText').textContent = t('subtitle');
+  document.getElementById('dropTitle').textContent = t('dropTitle');
+  document.getElementById('dropSubtitle').textContent = t('dropSubtitle');
+
+  selectAllBtn.textContent = t('btnSelectAll');
+  selectNoneBtn.textContent = t('btnSelectNone');
+  expandAllBtn.textContent = t('btnExpandAll');
+  collapseAllBtn.textContent = t('btnCollapseAll');
+
+  document.getElementById('statTotalLabel').textContent = t('statTotalLabel');
+  document.getElementById('statMdLabel').textContent = t('statMdLabel');
+  document.getElementById('statIncludedLabel').textContent = t('statIncludedLabel');
+
+  document.getElementById('filenameLabel').textContent = t('filenameLabel');
+  filenameInput.placeholder = t('filenamePlaceholder');
+  fsapiHint.textContent = SUPPORTS_SAVE_PICKER ? t('fsapiHintSupported') : t('fsapiHintFallback');
+
+  downloadTxtBtn.textContent = t('btnDownloadTxt');
+  downloadPdfBtn.textContent = t('btnDownloadPdf');
+  resetBtn.textContent = t('btnReset');
+
+  document.documentElement.lang = currentLang;
+
+  // se o nome do arquivo ainda é o sugerido automaticamente, atualiza para o idioma atual
+  if(lastFilenameWasAuto && treeRoot){
+    filenameInput.value = `${rootFolderName}-${t('defaultFilenameSuffix')}`;
+  }
+}
+
+langSelect.addEventListener('change', () => {
+  currentLang = langSelect.value;
+  applyStaticTexts();
+});
+
+filenameInput.addEventListener('input', () => {
+  lastFilenameWasAuto = false;
+});
+
 function setStatus(msg, type){
   statusEl.textContent = msg;
   statusEl.className = 'status' + (type ? ' ' + type : '');
@@ -447,10 +620,17 @@ function hideProgress(){
   progressBox.classList.remove('show');
 }
 
+function sanitizeFilename(name){
+  const cleaned = name.trim().replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ');
+  return cleaned || 'converted-files';
+}
+
 function resetUI(){
   mdEntries = [];
   treeRoot = null;
   folderInput.value = '';
+  filenameInput.value = '';
+  lastFilenameWasAuto = true;
   setStatus('');
   treeWrap.innerHTML = '';
   treeWrap.classList.remove('show');
@@ -471,7 +651,7 @@ function buildTree(fileMetas, rootName){
 
   fileMetas.forEach(meta => {
     const segments = meta.path.split('/');
-    segments.shift(); // remove o nome da pasta raiz (já representado pelo nó root)
+    segments.shift();
     const fileName = segments.pop();
     let currentKey = '';
     let parent = root;
@@ -496,7 +676,7 @@ function buildTree(fileMetas, rootName){
   function sortNode(node){
     node.children.sort((a,b) => {
       if(a.type !== b.type) return a.type === 'folder' ? -1 : 1;
-      return a.name.localeCompare(b.name, 'pt-BR');
+      return a.name.localeCompare(b.name);
     });
     node.children.forEach(c => { if(c.type === 'folder') sortNode(c); });
   }
@@ -684,7 +864,7 @@ collapseAllBtn.addEventListener('click', () => {
 folderInput.addEventListener('change', async (e) => {
   const files = Array.from(e.target.files);
   if(!files.length){
-    setStatus('Nenhum arquivo encontrado nessa pasta.', 'error');
+    setStatus(t('statusNoFilesInFolder'), 'error');
     return;
   }
   await processFiles(files);
@@ -698,7 +878,7 @@ dropZone.addEventListener('drop', async (e) => {
   const items = e.dataTransfer.items;
   if(!items || !items.length) return;
 
-  setStatus('Lendo arquivos da pasta arrastada...');
+  setStatus(t('statusReadingDragged'));
   const files = [];
   const entries = Array.from(items).map(it => it.webkitGetAsEntry && it.webkitGetAsEntry()).filter(Boolean);
 
@@ -735,18 +915,18 @@ dropZone.addEventListener('drop', async (e) => {
   }
 
   if(!files.length){
-    setStatus('Nenhum arquivo encontrado.', 'error');
+    setStatus(t('statusNoFilesFound'), 'error');
     return;
   }
   await processFiles(files);
 });
 
 async function processFiles(files){
-  setStatus('Lendo arquivos...');
+  setStatus(t('statusReadingFiles'));
   treeWrap.innerHTML = '';
 
   const firstPath = files[0].webkitRelativePath || files[0].relativePath || files[0].name;
-  rootFolderName = firstPath.split('/')[0] || 'pasta';
+  rootFolderName = firstPath.split('/')[0] || 'folder';
 
   const mdFiles = files.filter(f => {
     const path = f.webkitRelativePath || f.relativePath || f.name;
@@ -758,7 +938,7 @@ async function processFiles(files){
   summaryEl.style.display = 'flex';
 
   if(!mdFiles.length){
-    setStatus('Nenhum arquivo .md foi encontrado nessa pasta.', 'error');
+    setStatus(t('statusNoMdFound'), 'error');
     downloadTxtBtn.disabled = true;
     downloadPdfBtn.disabled = true;
     listActions.classList.remove('show');
@@ -774,7 +954,7 @@ async function processFiles(files){
 
   mdEntries = [];
   const fileMetas = [];
-  showProgress('Lendo arquivos...');
+  showProgress(t('progressReading'));
   for(let i = 0; i < files.length; i++){
     const file = files[i];
     const path = file.webkitRelativePath || file.relativePath || file.name;
@@ -796,11 +976,10 @@ async function processFiles(files){
   treeWrap.classList.add('show');
   listActions.classList.add('show');
   filenameBox.classList.add('show');
-  if(!filenameInput.value.trim()){
-    filenameInput.value = `${rootFolderName}-arquivos-md`;
-  }
+  lastFilenameWasAuto = true;
+  filenameInput.value = `${rootFolderName}-${t('defaultFilenameSuffix')}`;
   updateIncludedCount();
-  setStatus(`Pronto! ${mdFiles.length} arquivo(s) .md encontrados. Use as pastas para abrir/fechar e as caixas para escolher o que converter.`, 'ok');
+  setStatus(t('statusReady', mdFiles.length), 'ok');
 }
 
 /* ---------- salvar arquivo (com seletor nativo quando disponível) ---------- */
@@ -822,9 +1001,8 @@ async function saveFile(blob, filenameNoExt, extension, mimeType){
       return true;
     } catch(err){
       if(err && err.name === 'AbortError'){
-        return false; // usuário cancelou o diálogo
+        return false;
       }
-      // qualquer outro erro: cai no fallback abaixo
     }
   }
 
@@ -849,7 +1027,7 @@ downloadTxtBtn.addEventListener('click', async () => {
   if(!included.length) return;
 
   downloadTxtBtn.disabled = true;
-  showProgress('Montando arquivo .txt...');
+  showProgress(t('progressBuildingTxt'));
 
   const parts = [];
   for(let i = 0; i < included.length; i++){
@@ -863,7 +1041,7 @@ downloadTxtBtn.addEventListener('click', async () => {
 
   hideProgress();
   const saved = await saveFile(blob, filenameInput.value, 'txt', 'text/plain');
-  setStatus(saved ? 'Arquivo .txt salvo com sucesso.' : 'Download cancelado.', saved ? 'ok' : '');
+  setStatus(saved ? t('statusTxtSaved') : t('statusDownloadCancelled'), saved ? 'ok' : '');
   downloadTxtBtn.disabled = false;
 });
 
@@ -872,12 +1050,12 @@ downloadPdfBtn.addEventListener('click', async () => {
   if(!included.length) return;
 
   if(!window.jspdf){
-    setStatus('Não foi possível carregar o gerador de PDF (verifique sua conexão com a internet).', 'error');
+    setStatus(t('statusPdfLibError'), 'error');
     return;
   }
 
   downloadPdfBtn.disabled = true;
-  showProgress('Montando arquivo .pdf...');
+  showProgress(t('progressBuildingPdf'));
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
@@ -918,9 +1096,12 @@ downloadPdfBtn.addEventListener('click', async () => {
 
   hideProgress();
   const saved = await saveFile(pdfBlob, filenameInput.value, 'pdf', 'application/pdf');
-  setStatus(saved ? 'Arquivo .pdf salvo com sucesso.' : 'Download cancelado.', saved ? 'ok' : '');
+  setStatus(saved ? t('statusPdfSaved') : t('statusDownloadCancelled'), saved ? 'ok' : '');
   downloadPdfBtn.disabled = false;
 });
+
+/* ---------- inicialização ---------- */
+applyStaticTexts();
 
 /* ---------- service worker (PWA) ---------- */
 if('serviceWorker' in navigator){

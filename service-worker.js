@@ -1,4 +1,4 @@
-const CACHE_NAME = 'md-para-txt-v3';
+const CACHE_NAME = 'md-para-txt-v4';
 const ASSETS = [
   './index.html',
   './manifest.json',
